@@ -47,10 +47,16 @@ class SupabaseOrderRepository implements OrderRepository {
 
   @override
   Future<void> createOrder(Order order) async {
-    // Insert order first
+    final userId = _client.auth.currentUser?.id;
+
+    if (userId == null) {
+      throw Exception('User must be logged in to place an order');
+    }
+
     final orderResponse = await _client
         .from('orders')
         .insert({
+          'user_id': userId, // Link to profile
           'total_amount': order.totalAmount,
           'tax_amount': order.taxAmount,
           'shipping_cost': order.shippingCost,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/locator.dart';
-import '../../../domain/repositories/dashboard_repository.dart';
+import '../../dashboard/domain/repositories/dashboard_repository.dart';
 import '../../dashboard/view/analytics_graph.dart';
 import '../../dashboard/view/dashboard_widgets.dart';
 import '../interactor/analytics_bloc.dart';

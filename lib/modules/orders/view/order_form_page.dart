@@ -4,12 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/services/locator.dart';
-import '../../../../domain/entities/order.dart';
-import '../../../../domain/entities/tshirt.dart';
-import '../../../../domain/entities/variant.dart';
-import '../../../../domain/repositories/order_repository.dart';
-import '../../../../domain/repositories/inventory_repository.dart';
+import '../../../core/services/locator.dart';
+import '../domain/entities/order.dart';
+import '../../inventory/domain/entities/tshirt.dart';
+import '../../inventory/domain/entities/variant.dart';
+import '../domain/repositories/order_repository.dart';
+import '../../inventory/domain/repositories/inventory_repository.dart';
+import '../../inventory/domain/repositories/category_repository.dart';
 import '../../inventory/interactor/inventory_bloc.dart';
 import '../../inventory/interactor/inventory_event.dart';
 import '../../inventory/interactor/inventory_state.dart';
@@ -18,7 +19,7 @@ import '../interactor/orders_event.dart';
 import '../interactor/orders_state.dart';
 import '../../auth/interactor/auth_bloc.dart';
 import '../../auth/interactor/auth_state.dart';
-import '../../../../domain/entities/user_profile.dart';
+import '../../auth/domain/entities/user_profile.dart';
 
 class OrderFormPage extends StatelessWidget {
   final Order? order;
@@ -34,9 +35,10 @@ class OrderFormPage extends StatelessWidget {
               OrdersBloc(orderRepository: getIt<OrderRepository>()),
         ),
         BlocProvider(
-          create: (context) =>
-              InventoryBloc(repository: getIt<InventoryRepository>())
-                ..add(LoadInventory()),
+          create: (context) => InventoryBloc(
+            repository: getIt<InventoryRepository>(),
+            categoryRepository: getIt<CategoryRepository>(),
+          )..add(LoadInventory()),
         ),
       ],
       child: OrderFormView(order: order),
@@ -148,6 +150,7 @@ class _OrderFormViewState extends State<OrderFormView> {
 
       final newOrder = Order(
         id: widget.order?.id ?? const Uuid().v4(),
+        userId: widget.order?.userId ?? '',
         customerName: _nameController.text,
         customerEmail: _emailController.text,
         customerPhone: _phoneController.text,

@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/tshirt.dart';
-import '../../domain/entities/category.dart';
 import '../../domain/entities/variant.dart';
 import '../../domain/repositories/inventory_repository.dart';
 
@@ -9,20 +7,6 @@ class SupabaseInventoryRepository implements InventoryRepository {
   final SupabaseClient _client;
 
   SupabaseInventoryRepository(this._client);
-
-  @override
-  Future<void> addCategory(Category category) async {
-    await _client.from('categories').insert({
-      'name': category.name,
-      'tax_percentage': category.taxPercentage,
-    });
-  }
-
-  @override
-  Future<List<Category>> getCategories() async {
-    final response = await _client.from('categories').select();
-    return (response as List).map((e) => Category.fromJson(e)).toList();
-  }
 
   @override
   Future<List<TShirt>> getTShirts() async {
@@ -60,7 +44,6 @@ class SupabaseInventoryRepository implements InventoryRepository {
         })
         .select()
         .single();
-    print('Add Product Response: $response');
 
     // If there are variants, add them
     if (tshirt.variants.isNotEmpty) {
@@ -78,7 +61,7 @@ class SupabaseInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> updateTShirt(TShirt tshirt) async {
-    // Update product fields
+    // 1. Update product fields
     await _client
         .from('tshirts')
         .update({
@@ -94,18 +77,58 @@ class SupabaseInventoryRepository implements InventoryRepository {
         })
         .eq('id', tshirt.id);
 
-    // Delete all existing variants for this product
-    await _client.from('variants').delete().eq('tshirt_id', tshirt.id);
+    // 2. Fetch existing variant IDs to determine which ones to delete
+    final existingVariantsResponse = await _client
+        .from('variants')
+        .select('id')
+        .eq('tshirt_id', tshirt.id);
+    final existingIds = (existingVariantsResponse as List)
+        .map((e) => e['id'] as String)
+        .toSet();
 
-    // Insert new variants
+    final incomingIds = <String>{};
+
+    // 3. Process incoming variants (Update or Insert)
     if (tshirt.variants.isNotEmpty) {
       for (var variant in tshirt.variants) {
-        await _client.from('variants').insert({
-          'tshirt_id': tshirt.id,
-          'size': variant.size,
-          'color': variant.color,
-          'stock_quantity': variant.stockQuantity,
-        });
+        if (variant.id.isNotEmpty && existingIds.contains(variant.id)) {
+          // Update existing
+          incomingIds.add(variant.id);
+          await _client
+              .from('variants')
+              .update({
+                'size': variant.size,
+                'color': variant.color,
+                'stock_quantity': variant.stockQuantity,
+              })
+              .eq('id', variant.id);
+        } else {
+          // Insert new
+          await _client.from('variants').insert({
+            'tshirt_id': tshirt.id,
+            'size': variant.size,
+            'color': variant.color,
+            'stock_quantity': variant.stockQuantity,
+          });
+        }
+      }
+    }
+
+    // 4. Delete removed variants (Handle FK Constraints)
+    final idsToDelete = existingIds.difference(incomingIds);
+    for (var id in idsToDelete) {
+      try {
+        await _client.from('variants').delete().eq('id', id);
+      } catch (e) {
+        // If delete fails (likely FK constraint due to existing orders),
+        // set stock to 0 to effectively "archive" it from availability.
+        print(
+          'Could not delete variant $id (likely used in orders). Setting stock to 0. Error: $e',
+        );
+        await _client
+            .from('variants')
+            .update({'stock_quantity': 0})
+            .eq('id', id);
       }
     }
   }
@@ -135,40 +158,5 @@ class SupabaseInventoryRepository implements InventoryRepository {
   @override
   Future<void> deleteVariant(String id) async {
     await _client.from('variants').delete().eq('id', id);
-  }
-
-  @override
-  Future<String> uploadImage(String filePath) async {
-    final file = File(filePath);
-    final fileName =
-        '${DateTime.now().toIso8601String()}_${file.uri.pathSegments.last}';
-    await _client.storage.from('products').upload(fileName, file);
-    return _client.storage.from('products').getPublicUrl(fileName);
-  }
-
-  @override
-  Future<Category> getOrCreateCategory(String name) async {
-    // Check if exists (case-insensitive)
-    final existingParams = await _client
-        .from('categories')
-        .select()
-        .ilike('name', name)
-        .maybeSingle();
-
-    if (existingParams != null) {
-      return Category.fromJson(existingParams);
-    }
-
-    // Create new
-    final newParams = await _client
-        .from('categories')
-        .insert({
-          'name': name,
-          'tax_percentage': 0, // Default
-        })
-        .select()
-        .single();
-
-    return Category.fromJson(newParams);
   }
 }

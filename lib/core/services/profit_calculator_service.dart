@@ -1,4 +1,4 @@
-import '../../domain/entities/order.dart';
+import 'package:inventory_system/modules/orders/domain/entities/order.dart';
 
 class ProfitCalculatorService {
   /// Calculates Net Profit for a single order.

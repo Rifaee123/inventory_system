@@ -1,5 +1,7 @@
+import 'package:inventory_system/modules/orders/domain/entities/order.dart'
+    as entity;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../domain/entities/order.dart' as entity;
+
 import '../../domain/repositories/dashboard_repository.dart';
 
 class SupabaseDashboardRepository implements DashboardRepository {

@@ -9,10 +9,11 @@ import '../interactor/orders_event.dart';
 import '../interactor/orders_state.dart';
 import '../../auth/interactor/auth_bloc.dart';
 import '../../auth/interactor/auth_state.dart';
-import '../../../domain/entities/user_profile.dart';
+import '../../auth/domain/entities/user_profile.dart';
 
-import '../../../../core/services/locator.dart';
-import '../../../../domain/repositories/order_repository.dart';
+import '../../../core/services/locator.dart';
+import '../domain/repositories/order_repository.dart';
+import '../domain/entities/order.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -217,7 +218,7 @@ class OrdersView extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                            ],
+                            ].toList(),
                           );
                         }
                       },
@@ -273,7 +274,7 @@ class OrdersView extends StatelessWidget {
                                     align: TextAlign.right,
                                   ),
                                 ],
-                                rows: state.orders.map<DataRow>((order) {
+                                rows: state.orders.map((Order order) {
                                   return DataRow(
                                     onSelectChanged: (_) async {
                                       final result = await context.push(

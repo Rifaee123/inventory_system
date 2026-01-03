@@ -4,14 +4,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/locator.dart';
 import '../../../../core/widgets/custom_button.dart';
-import '../../../../domain/entities/tshirt.dart';
+import '../domain/entities/tshirt.dart';
 
-import '../../../../domain/entities/variant.dart';
-import '../../../../domain/repositories/inventory_repository.dart';
+import '../domain/entities/variant.dart';
+import '../domain/repositories/inventory_repository.dart';
+import '../domain/repositories/category_repository.dart';
 import '../interactor/inventory_bloc.dart';
 import '../interactor/inventory_event.dart';
 import '../interactor/inventory_state.dart';
-import '../../../../domain/entities/category.dart';
+import '../domain/entities/category.dart';
 
 class InventoryFormPage extends StatelessWidget {
   final TShirt? tshirt;
@@ -21,9 +22,10 @@ class InventoryFormPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          InventoryBloc(repository: getIt<InventoryRepository>())
-            ..add(LoadInventory()), // Load categories
+      create: (context) => InventoryBloc(
+        repository: getIt<InventoryRepository>(),
+        categoryRepository: getIt<CategoryRepository>(),
+      )..add(LoadInventory()), // Load categories
       child: InventoryFormView(tshirt: tshirt),
     );
   }

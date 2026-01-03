@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../domain/entities/order.dart';
+import '../domain/entities/order.dart';
 
 abstract class OrdersEvent extends Equatable {
   const OrdersEvent();

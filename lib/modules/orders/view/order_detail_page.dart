@@ -3,19 +3,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/services/locator.dart';
-import '../../../../domain/entities/order.dart';
-import '../../../../domain/repositories/order_repository.dart';
+import '../../../core/services/locator.dart';
+import '../domain/entities/order.dart';
+import '../domain/repositories/order_repository.dart';
 import '../../inventory/interactor/inventory_bloc.dart';
 import '../../inventory/interactor/inventory_event.dart';
-import '../../inventory/interactor/inventory_state.dart';
-import '../../../../domain/repositories/inventory_repository.dart';
+import '../../inventory/domain/repositories/inventory_repository.dart';
+import '../../inventory/domain/repositories/category_repository.dart';
 import '../interactor/orders_bloc.dart';
 import '../interactor/orders_event.dart';
 import '../interactor/orders_state.dart';
 import '../../auth/interactor/auth_bloc.dart';
 import '../../auth/interactor/auth_state.dart';
-import '../../../../domain/entities/user_profile.dart';
+import '../../auth/domain/entities/user_profile.dart';
 
 class OrderDetailPage extends StatelessWidget {
   final String orderId;
@@ -32,9 +32,10 @@ class OrderDetailPage extends StatelessWidget {
                 ..add(LoadOrders()),
         ),
         BlocProvider(
-          create: (context) =>
-              InventoryBloc(repository: getIt<InventoryRepository>())
-                ..add(LoadInventory()),
+          create: (context) => InventoryBloc(
+            repository: getIt<InventoryRepository>(),
+            categoryRepository: getIt<CategoryRepository>(),
+          )..add(LoadInventory()),
         ),
       ],
       child: OrderDetailView(orderId: orderId),

@@ -41,6 +41,7 @@ class OrderItem extends Equatable {
 
 class Order extends Equatable {
   final String id;
+  final String userId;
   final double totalAmount;
   final double taxAmount;
   final double shippingCost;
@@ -55,6 +56,7 @@ class Order extends Equatable {
 
   const Order({
     required this.id,
+    required this.userId,
     required this.totalAmount,
     required this.taxAmount,
     required this.shippingCost,
@@ -71,6 +73,7 @@ class Order extends Equatable {
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
       id: json['id'] as String,
+      userId: json['user_id'] as String? ?? '', // Handle migration or null
       totalAmount: (json['total_amount'] as num).toDouble(),
       taxAmount: (json['tax_amount'] as num).toDouble(),
       shippingCost: (json['shipping_cost'] as num).toDouble(),
@@ -92,6 +95,7 @@ class Order extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'total_amount': totalAmount,
       'tax_amount': taxAmount,
       'shipping_cost': shippingCost,
@@ -107,6 +111,7 @@ class Order extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    userId,
     totalAmount,
     taxAmount,
     shippingCost,

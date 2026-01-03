@@ -1,4 +1,4 @@
-import '../entities/order.dart';
+import 'package:inventory_system/modules/orders/domain/entities/order.dart';
 
 abstract class DashboardRepository {
   Future<Map<String, dynamic>> getDashboardStats();

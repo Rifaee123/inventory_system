@@ -1,14 +1,17 @@
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../data/repositories/supabase_inventory_repository.dart';
-import '../../data/repositories/supabase_order_repository.dart';
-import '../../data/repositories/supabase_dashboard_repository.dart';
-import '../../data/repositories/mock_auth_repository.dart';
-import '../../domain/repositories/inventory_repository.dart';
-import '../../domain/repositories/order_repository.dart';
-import '../../domain/repositories/dashboard_repository.dart';
-import '../../domain/repositories/auth_repository.dart';
+import '../../modules/inventory/data/repositories/supabase_inventory_repository.dart';
+import '../../modules/orders/data/repositories/supabase_order_repository.dart';
+import '../../modules/dashboard/data/repositories/supabase_dashboard_repository.dart';
+import '../../modules/inventory/domain/repositories/inventory_repository.dart';
+import '../../modules/orders/domain/repositories/order_repository.dart';
+import '../../modules/dashboard/domain/repositories/dashboard_repository.dart';
+import '../../modules/auth/domain/repositories/auth_repository.dart';
 import 'profit_calculator_service.dart';
+import 'storage_service.dart';
+import '../../modules/auth/data/repositories/supabase_auth_repository.dart';
+import '../../modules/inventory/data/repositories/supabase_category_repository.dart';
+import '../../modules/inventory/domain/repositories/category_repository.dart';
 
 final getIt = GetIt.instance;
 
@@ -30,11 +33,21 @@ Future<void> setupLocator() async {
     () => SupabaseDashboardRepository(getIt<SupabaseClient>()),
   );
 
-  // Using MockAuthRepository to bypass auth
-  getIt.registerLazySingleton<AuthRepository>(() => MockAuthRepository());
+  // Using SupabaseAuthRepository for real auth
+  getIt.registerLazySingleton<AuthRepository>(
+    () => SupabaseAuthRepository(getIt<SupabaseClient>()),
+  );
 
   // Services
   getIt.registerLazySingleton<ProfitCalculatorService>(
     () => ProfitCalculatorService(),
+  );
+
+  getIt.registerLazySingleton<StorageService>(
+    () => SupabaseStorageService(getIt<SupabaseClient>()),
+  );
+
+  getIt.registerLazySingleton<CategoryRepository>(
+    () => SupabaseCategoryRepository(getIt<SupabaseClient>()),
   );
 }

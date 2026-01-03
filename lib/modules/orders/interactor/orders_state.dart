@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../domain/entities/order.dart';
+import '../domain/entities/order.dart';
 
 enum OrdersStatus { initial, loading, success, failure }
 

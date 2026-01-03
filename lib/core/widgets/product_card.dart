@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../domain/entities/tshirt.dart';
+import '../../modules/inventory/domain/entities/tshirt.dart';
 
 class ProductCard extends StatelessWidget {
   final TShirt tshirt;

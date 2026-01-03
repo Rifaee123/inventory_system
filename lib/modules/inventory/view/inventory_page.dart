@@ -5,38 +5,33 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/widgets/product_card.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/services/locator.dart';
-import '../../../../domain/repositories/inventory_repository.dart';
+import '../domain/repositories/inventory_repository.dart';
+import '../domain/repositories/category_repository.dart';
 import '../interactor/inventory_bloc.dart';
 import '../interactor/inventory_event.dart';
 import '../interactor/inventory_state.dart';
 import '../../auth/interactor/auth_bloc.dart';
 import '../../auth/interactor/auth_state.dart';
-import '../../../domain/entities/user_profile.dart';
+import '../../auth/domain/entities/user_profile.dart';
 
 class InventoryPage extends StatelessWidget {
   const InventoryPage({super.key});
 
   @override
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          InventoryBloc(repository: getIt<InventoryRepository>())
-            ..add(LoadInventory()),
+      create: (context) => InventoryBloc(
+        repository: getIt<InventoryRepository>(),
+        categoryRepository: getIt<CategoryRepository>(),
+      )..add(LoadInventory()),
       child: const InventoryView(),
     );
   }
 }
 
-class InventoryView extends StatefulWidget {
+class InventoryView extends StatelessWidget {
   const InventoryView({super.key});
-
-  @override
-  State<InventoryView> createState() => _InventoryViewState();
-}
-
-class _InventoryViewState extends State<InventoryView> {
-  String? _selectedCategoryId; // null means "All"
-  String? _stockFilter; // null = all, 'low' = low stock, 'out' = out of stock
 
   @override
   Widget build(BuildContext context) {
@@ -51,26 +46,6 @@ class _InventoryViewState extends State<InventoryView> {
               // Stats Row
               BlocBuilder<InventoryBloc, InventoryState>(
                 builder: (context, state) {
-                  final totalProducts = state.tshirts.length;
-                  final lowStock = state.tshirts.where((tshirt) {
-                    return tshirt.variants.any(
-                      (v) => v.stockQuantity > 0 && v.stockQuantity < 10,
-                    );
-                  }).length;
-                  final outOfStock = state.tshirts.where((tshirt) {
-                    return tshirt.variants.isNotEmpty &&
-                        tshirt.variants.every((v) => v.stockQuantity == 0);
-                  }).length;
-
-                  double totalValue = 0;
-                  for (var tshirt in state.tshirts) {
-                    final totalStock = tshirt.variants.fold<int>(
-                      0,
-                      (sum, v) => sum + v.stockQuantity,
-                    );
-                    totalValue += tshirt.basePrice * totalStock;
-                  }
-
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth;
@@ -90,30 +65,35 @@ class _InventoryViewState extends State<InventoryView> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              setState(() {
-                                _stockFilter = null;
-                                _selectedCategoryId = null;
-                              });
+                              context.read<InventoryBloc>().add(
+                                const FilterInventory(
+                                  categoryId: null,
+                                  stockFilter: null,
+                                ),
+                              );
                             },
                             child: StatCard(
                               title: 'Total Products',
-                              value: '$totalProducts',
+                              value: '${state.totalProducts}',
                               icon: Icons.inventory_2,
                             ),
                           ),
                           GestureDetector(
                             onTap: () {
-                              setState(() {
-                                _stockFilter = _stockFilter == 'low'
-                                    ? null
-                                    : 'low';
-                                _selectedCategoryId = null;
-                              });
+                              final newFilter = state.stockFilter == 'low'
+                                  ? null
+                                  : 'low';
+                              context.read<InventoryBloc>().add(
+                                FilterInventory(
+                                  categoryId: state.selectedCategoryId,
+                                  stockFilter: newFilter,
+                                ),
+                              );
                             },
                             child: StatCard(
                               title: 'Low Stock',
-                              value: '$lowStock',
-                              badgeText: lowStock > 0
+                              value: '${state.lowStockCount}',
+                              badgeText: state.lowStockCount > 0
                                   ? 'Needs Attention'
                                   : null,
                               badgeColor: const Color(0xFFEAB308),
@@ -123,17 +103,20 @@ class _InventoryViewState extends State<InventoryView> {
                           ),
                           GestureDetector(
                             onTap: () {
-                              setState(() {
-                                _stockFilter = _stockFilter == 'out'
-                                    ? null
-                                    : 'out';
-                                _selectedCategoryId = null;
-                              });
+                              final newFilter = state.stockFilter == 'out'
+                                  ? null
+                                  : 'out';
+                              context.read<InventoryBloc>().add(
+                                FilterInventory(
+                                  categoryId: state.selectedCategoryId,
+                                  stockFilter: newFilter,
+                                ),
+                              );
                             },
                             child: StatCard(
                               title: 'Out of Stock',
-                              value: '$outOfStock',
-                              badgeText: outOfStock > 0
+                              value: '${state.outOfStockCount}',
+                              badgeText: state.outOfStockCount > 0
                                   ? 'Restock needed'
                                   : null,
                               badgeColor: const Color(0xFF7676AC),
@@ -143,7 +126,7 @@ class _InventoryViewState extends State<InventoryView> {
                           ),
                           StatCard(
                             title: 'Total Value',
-                            value: '\$${totalValue.toStringAsFixed(2)}',
+                            value: '\$${state.totalValue.toStringAsFixed(2)}',
                             icon: Icons.attach_money,
                           ),
                         ],
@@ -246,13 +229,17 @@ class _InventoryViewState extends State<InventoryView> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    setState(() {
-                                      _selectedCategoryId = null;
-                                    });
+                                    context.read<InventoryBloc>().add(
+                                      FilterInventory(
+                                        categoryId: null,
+                                        stockFilter: state.stockFilter,
+                                      ),
+                                    );
                                   },
                                   child: _FilterChip(
                                     label: 'All Categories',
-                                    isSelected: _selectedCategoryId == null,
+                                    isSelected:
+                                        state.selectedCategoryId == null,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -261,14 +248,18 @@ class _InventoryViewState extends State<InventoryView> {
                                     padding: const EdgeInsets.only(right: 8),
                                     child: GestureDetector(
                                       onTap: () {
-                                        setState(() {
-                                          _selectedCategoryId = category.id;
-                                        });
+                                        context.read<InventoryBloc>().add(
+                                          FilterInventory(
+                                            categoryId: category.id,
+                                            stockFilter: state.stockFilter,
+                                          ),
+                                        );
                                       },
                                       child: _FilterChip(
                                         label: category.name,
                                         isSelected:
-                                            _selectedCategoryId == category.id,
+                                            state.selectedCategoryId ==
+                                            category.id,
                                       ),
                                     ),
                                   );
@@ -304,24 +295,7 @@ class _InventoryViewState extends State<InventoryView> {
                     return Center(child: Text('Error: ${state.errorMessage}'));
                   }
 
-                  var filteredTshirts = _selectedCategoryId == null
-                      ? state.tshirts
-                      : state.tshirts
-                            .where((t) => t.categoryId == _selectedCategoryId)
-                            .toList();
-
-                  if (_stockFilter == 'low') {
-                    filteredTshirts = filteredTshirts.where((tshirt) {
-                      return tshirt.variants.any(
-                        (v) => v.stockQuantity > 0 && v.stockQuantity < 10,
-                      );
-                    }).toList();
-                  } else if (_stockFilter == 'out') {
-                    filteredTshirts = filteredTshirts.where((tshirt) {
-                      return tshirt.variants.isNotEmpty &&
-                          tshirt.variants.every((v) => v.stockQuantity == 0);
-                    }).toList();
-                  }
+                  final filteredTshirts = state.filteredTshirts;
 
                   if (filteredTshirts.isEmpty) {
                     return const Center(child: Text('No items found.'));

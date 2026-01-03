@@ -4,12 +4,12 @@ import '../interactor/dashboard_bloc.dart';
 import '../interactor/dashboard_event.dart';
 import '../interactor/dashboard_state.dart';
 import '../../../core/services/locator.dart';
-import '../../../domain/repositories/dashboard_repository.dart';
+import '../domain/repositories/dashboard_repository.dart';
 import 'analytics_graph.dart';
 import 'dashboard_widgets.dart';
 import '../../auth/interactor/auth_bloc.dart';
 import '../../auth/interactor/auth_state.dart';
-import '../../../domain/entities/user_profile.dart';
+import '../../auth/domain/entities/user_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 

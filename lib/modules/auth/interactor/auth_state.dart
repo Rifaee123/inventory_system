@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/user_profile.dart';
+import '../domain/entities/user_profile.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading, failure }
 
